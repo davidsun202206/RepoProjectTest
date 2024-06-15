@@ -1,0 +1,99 @@
+name: Snowflake_CICD
+
+on:
+  # push:
+  #   branches:
+  #     - dev
+  workflow_dispatch:   # Allow manual triggering of the workflow
+
+jobs:
+  deploy_dev:
+    if: github.ref == 'refs/heads/dev' 
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Retrieve repository
+        uses: actions/checkout@v3
+      
+      - name: Use Python 3.8.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8.x
+
+      - name: Install SnowSQL
+        run: |
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.9-linux_x86_64.bash
+          SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.9-linux_x86_64.bash
+        
+      - name: Deploy to DEV
+        env:
+          
+          SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }} 
+          SNOWSQL_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USERNAME }}
+          SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+        run: |
+          ~/bin/snowsql -f $GITHUB_WORKSPACE/scripts/ddl_master_change_history.sql
+          pip install schemachange
+          for dir in "$GITHUB_WORKSPACE/scripts"/*/; do
+              subdir=$(basename "$dir")
+              echo "Found project subdirectory: $subdir"
+
+              ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/scripts/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+              echo "$ddl_project_change_history_query"
+              ~/bin/snowsql -q "$ddl_project_change_history_query"
+
+              schemachange -f $GITHUB_WORKSPACE/scripts/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
+              
+              dml_change_history_query=$(cat "$GITHUB_WORKSPACE/scripts/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+              echo "$dml_change_history_query"
+              ~/bin/snowsql -q "$dml_change_history_query"
+          done
+
+  deploy_qut:
+    if: github.ref == 'refs/heads/main'  # Change this to manually trigger or depend on dev job
+    needs: deploy_dev  # Ensures this job runs after dev deployment
+    runs-on: ubuntu-latest
+    environment: qut
+    steps:
+      - name: Retrieve repository
+        uses: actions/checkout@v3
+      
+      - name: Use Python 3.8.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8.x
+
+      - name: Install SnowSQL
+        run: |
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.9-linux_x86_64.bash
+          SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.9-linux_x86_64.bash
+        
+      - name: Deploy to DEV
+        env:
+          
+          SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }} 
+          SNOWSQL_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USERNAME }}
+          SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+        run: |
+          ~/bin/snowsql -f $GITHUB_WORKSPACE/scripts/ddl_master_change_history.sql
+          pip install schemachange
+          for dir in "$GITHUB_WORKSPACE/scripts"/*/; do
+              subdir=$(basename "$dir")
+              echo "Found project subdirectory: $subdir"
+
+              ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/scripts/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+              echo "$ddl_project_change_history_query"
+              ~/bin/snowsql -q "$ddl_project_change_history_query"
+
+              schemachange -f $GITHUB_WORKSPACE/scripts/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
+              
+              dml_change_history_query=$(cat "$GITHUB_WORKSPACE/scripts/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+              echo "$dml_change_history_query"
+              ~/bin/snowsql -q "$dml_change_history_query"
+          done
