@@ -35,19 +35,19 @@ jobs:
           SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
           SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
         run: |
-          ~/bin/snowsql -f $GITHUB_WORKSPACE/scripts/ddl_master_change_history.sql
+          ~/bin/snowsql -f $GITHUB_WORKSPACE/objects/ddl_master_change_history.sql
           pip install schemachange
-          for dir in "$GITHUB_WORKSPACE/scripts"/*/; do
+          for dir in "$GITHUB_WORKSPACE/objects"/*/; do
               subdir=$(basename "$dir")
               echo "Found project subdirectory: $subdir"
 
-              ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/scripts/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+              ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
               echo "$ddl_project_change_history_query"
               ~/bin/snowsql -q "$ddl_project_change_history_query"
 
-              schemachange -f $GITHUB_WORKSPACE/scripts/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
+              schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
               
-              dml_change_history_query=$(cat "$GITHUB_WORKSPACE/scripts/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+              dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
               echo "$dml_change_history_query"
               ~/bin/snowsql -q "$dml_change_history_query"
           done
@@ -80,19 +80,19 @@ jobs:
           SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
           SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
         run: |
-          ~/bin/snowsql -f $GITHUB_WORKSPACE/scripts/ddl_master_change_history.sql
+          ~/bin/snowsql -f $GITHUB_WORKSPACE/objects/ddl_master_change_history.sql
           pip install schemachange
-          for dir in "$GITHUB_WORKSPACE/scripts"/*/; do
+          for dir in "$GITHUB_WORKSPACE/objects"/*/; do
               subdir=$(basename "$dir")
               echo "Found project subdirectory: $subdir"
 
-              ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/scripts/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+              ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
               echo "$ddl_project_change_history_query"
               ~/bin/snowsql -q "$ddl_project_change_history_query"
 
-              schemachange -f $GITHUB_WORKSPACE/scripts/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
+              schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
               
-              dml_change_history_query=$(cat "$GITHUB_WORKSPACE/scripts/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+              dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
               echo "$dml_change_history_query"
               ~/bin/snowsql -q "$dml_change_history_query"
           done
