@@ -54,7 +54,6 @@ jobs:
 
   deploy_qut:
     if: github.ref == 'refs/heads/main'  # Change this to manually trigger or depend on dev job
-    needs: deploy_dev  # Ensures this job runs after dev deployment
     runs-on: ubuntu-latest
     environment: qut
     steps:
