@@ -6,7 +6,7 @@ on:
       environment:
         required: true
         type: string
-
+        
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -32,25 +32,32 @@ jobs:
           SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
           TARGET_PROJECT: ${{ vars.TARGET_PROJECT222 }}
         run: |
-          # ~/bin/snowsql -f $GITHUB_WORKSPACE/objects/ddl_master_change_history.sql
+          # create master change history table if not exists
           ddl_master_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_master_change_history.sql" | sed "s/{TARGET_PROJECT}/$TARGET_PROJECT/g")
           echo "$ddl_master_change_history_query"
           ~/bin/snowsql -q "$ddl_master_change_history_query"        
           pip install schemachange==3.6.1
+          # loop through all subdirectories for all projects
           for dir in "$GITHUB_WORKSPACE/objects"/*/; do
               subdir=$(basename "$dir")
               echo "Found project subdirectory: $subdir"
+              # if this job runs at ED repo
               if [[ -z $TARGET_PROJECT ]]; then
+                # create change history table for project if not exists
                 ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
                 echo "$ddl_project_change_history_query"
                 ~/bin/snowsql -q "$ddl_project_change_history_query"
-  
+                # run schemachange
                 schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
-                
+                # merge project change history into master change history table
+                # finally drop project change history table
                 dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
                 echo "$dml_change_history_query"
                 ~/bin/snowsql -q "$dml_change_history_query"
+              # if this job runs at project repo
+              # only run the target project subdirectory and skip the other subdirectories
               elif [[ $TARGET_PROJECT == $subdir ]]; then
+                echo "This is the target project!"
                 schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY
               else
                 echo "Not the target project!"
