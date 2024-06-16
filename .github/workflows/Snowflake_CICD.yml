@@ -43,7 +43,7 @@ jobs:
           for dir in "$GITHUB_WORKSPACE/objects"/*/; do
               subdir=$(basename "$dir")
               echo "Found project subdirectory: $subdir"
-              if [[ "${{ env.TARGET_PROJECT }}" == "$subdir" ]] || [[ -z "${{ env.TARGET_PROJECT }}" ]]; then
+              if [[ $TARGET_PROJECT == $subdir ]] || [[ -z $TARGET_PROJECT ]]; then
                 ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
                 echo "$ddl_project_change_history_query"
                 ~/bin/snowsql -q "$ddl_project_change_history_query"
