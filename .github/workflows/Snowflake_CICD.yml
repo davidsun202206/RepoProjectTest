@@ -4,6 +4,8 @@ on:
   # push:
   #   branches:
   #     - dev
+  #     - qut
+  #     - main
   workflow_dispatch:   # Allow manual triggering of the workflow
 
 jobs:
@@ -41,15 +43,17 @@ jobs:
               subdir=$(basename "$dir")
               echo "Found project subdirectory: $subdir"
 
-              ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
-              echo "$ddl_project_change_history_query"
-              ~/bin/snowsql -q "$ddl_project_change_history_query"
-
-              schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
-              
-              dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
-              echo "$dml_change_history_query"
-              ~/bin/snowsql -q "$dml_change_history_query"
+              if [[ "${{ env.target_project }}" == "project1" ]] || [[ -z "${{ env.target_project }}" ]];
+                ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+                echo "$ddl_project_change_history_query"
+                ~/bin/snowsql -q "$ddl_project_change_history_query"
+  
+                schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
+                
+                dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+                echo "$dml_change_history_query"
+                ~/bin/snowsql -q "$dml_change_history_query"
+              fi
           done
 
   deploy_qut:
