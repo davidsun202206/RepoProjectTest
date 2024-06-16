@@ -19,11 +19,11 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             echo "JOB_NAME=dev" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event.repository.name }}" != "RepoED"]]; then
+          elif [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event.repository.name }}" != "RepoED" ]]; then
             echo "JOB_NAME=qut" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == "refs/heads/qut" && "${{ github.event.repository.name }}" == "RepoED"]]; then
+          elif [[ "${{ github.ref }}" == "refs/heads/qut" && "${{ github.event.repository.name }}" == "RepoED" ]]; then
             echo "JOB_NAME=qut" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event.repository.name }}" == "RepoED"]]; then
+          elif [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event.repository.name }}" == "RepoED" ]]; then
             echo "JOB_NAME=prd" >> $GITHUB_ENV
           else
             echo "JOB_NAME=default" >> $GITHUB_ENV
