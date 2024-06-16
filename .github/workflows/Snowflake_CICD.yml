@@ -42,7 +42,7 @@ jobs:
           for dir in "$GITHUB_WORKSPACE/objects"/*/; do
               subdir=$(basename "$dir")
               echo "Found project subdirectory: $subdir"
-              if [[ $TARGET_PROJECT == $subdir ]] || [[ -z $TARGET_PROJECT ]]; then
+              if [[ -z $TARGET_PROJECT ]]; then
                 ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
                 echo "$ddl_project_change_history_query"
                 ~/bin/snowsql -q "$ddl_project_change_history_query"
@@ -52,6 +52,10 @@ jobs:
                 dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
                 echo "$dml_change_history_query"
                 ~/bin/snowsql -q "$dml_change_history_query"
+              elif [[ $TARGET_PROJECT == $subdir ]]; then
+                schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY
+              else
+                echo "Not target project!"
               fi
           done
 
@@ -81,22 +85,28 @@ jobs:
           SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USERNAME }}
           SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
           SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          TARGET_PROJECT: ${{ vars.TARGET_PROJECT }}
         run: |
           ~/bin/snowsql -f $GITHUB_WORKSPACE/objects/ddl_master_change_history.sql
           pip install schemachange
           for dir in "$GITHUB_WORKSPACE/objects"/*/; do
               subdir=$(basename "$dir")
               echo "Found project subdirectory: $subdir"
-
-              ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
-              echo "$ddl_project_change_history_query"
-              ~/bin/snowsql -q "$ddl_project_change_history_query"
-
-              schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
-              
-              dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
-              echo "$dml_change_history_query"
-              ~/bin/snowsql -q "$dml_change_history_query"
+              if [[ -z $TARGET_PROJECT ]]; then
+                ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+                echo "$ddl_project_change_history_query"
+                ~/bin/snowsql -q "$ddl_project_change_history_query"
+  
+                schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
+                
+                dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+                echo "$dml_change_history_query"
+                ~/bin/snowsql -q "$dml_change_history_query"
+              elif [[ $TARGET_PROJECT == $subdir ]]; then
+                schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY
+              else
+                echo "Not target project!"
+              fi
           done
 
   deploy_prd:
@@ -125,20 +135,26 @@ jobs:
           SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USERNAME }}
           SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
           SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          TARGET_PROJECT: ${{ vars.TARGET_PROJECT }}
         run: |
           ~/bin/snowsql -f $GITHUB_WORKSPACE/objects/ddl_master_change_history.sql
           pip install schemachange
           for dir in "$GITHUB_WORKSPACE/objects"/*/; do
               subdir=$(basename "$dir")
               echo "Found project subdirectory: $subdir"
-
-              ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
-              echo "$ddl_project_change_history_query"
-              ~/bin/snowsql -q "$ddl_project_change_history_query"
-
-              schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
-              
-              dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
-              echo "$dml_change_history_query"
-              ~/bin/snowsql -q "$dml_change_history_query"
+              if [[ -z $TARGET_PROJECT ]]; then
+                ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+                echo "$ddl_project_change_history_query"
+                ~/bin/snowsql -q "$ddl_project_change_history_query"
+  
+                schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
+                
+                dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+                echo "$dml_change_history_query"
+                ~/bin/snowsql -q "$dml_change_history_query"
+              elif [[ $TARGET_PROJECT == $subdir ]]; then
+                schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY
+              else
+                echo "Not target project!"
+              fi
           done
