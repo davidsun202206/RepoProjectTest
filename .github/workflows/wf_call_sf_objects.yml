@@ -11,21 +11,18 @@ on:
 jobs:
   deploy_dev:
     if: github.ref == 'refs/heads/dev' 
-    runs-on: ubuntu-latest
-    uses: ./wf_sf_objects.yml
+    uses: .github/workflows/wf_sf_objects.yml@main
     with:
       environment: dev
 
   deploy_qut:
     if: (github.ref == 'refs/heads/main' && github.event.repository.name != 'RepoED') || (github.ref == 'refs/heads/qut' && github.event.repository.name == 'RepoED')
-    runs-on: ubuntu-latest
-    uses: ./wf_sf_objects.yml
+    uses: .github/workflows/wf_sf_objects.yml@main
     with:
       environment: qut
 
   deploy_prd:
     if: github.ref == 'refs/heads/main' && github.event.repository.name == 'RepoED'
-    runs-on: ubuntu-latest
-    uses: ./wf_sf_objects.yml
+    uses: .github/workflows/wf_sf_objects.yml@main
     with:
       environment: prd
