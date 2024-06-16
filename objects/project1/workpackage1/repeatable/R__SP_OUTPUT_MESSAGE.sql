@@ -4,6 +4,6 @@ LANGUAGE SQL
 AS
 $$
 BEGIN
-  RETURN message || 'ABCdefg';
+  RETURN message;
 END;
 $$;
