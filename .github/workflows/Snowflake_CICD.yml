@@ -36,7 +36,6 @@ jobs:
           SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USERNAME }}
           SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
           SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
-          TARGET_PROJECT: ${{ env.TARGET_PROJECT }}
         run: |
           ~/bin/snowsql -f $GITHUB_WORKSPACE/objects/ddl_master_change_history.sql
           pip install schemachange
