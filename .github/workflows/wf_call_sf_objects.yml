@@ -14,15 +14,18 @@ jobs:
     uses: ./.github/workflows/wf_sf_objects.yml
     with:
       environment: dev
+    secrets: inherit
 
   deploy_qut:
     if: (github.ref == 'refs/heads/main' && github.event.repository.name != 'RepoED') || (github.ref == 'refs/heads/qut' && github.event.repository.name == 'RepoED')
     uses: ./.github/workflows/wf_sf_objects.yml
     with:
       environment: qut
+    secrets: inherit
 
   deploy_prd:
     if: github.ref == 'refs/heads/main' && github.event.repository.name == 'RepoED'
     uses: ./.github/workflows/wf_sf_objects.yml
     with:
       environment: prd
+    secrets: inherit
