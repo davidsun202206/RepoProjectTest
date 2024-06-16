@@ -29,13 +29,13 @@ jobs:
 
       - name: Deploy to DEV
         env:
-          
           SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }} 
           SNOWSQL_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
           SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USERNAME }}
           SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
           SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          TARGET_PROJECT: ${{ vars.TARGET_PROJECT }}
         run: |
           ~/bin/snowsql -f $GITHUB_WORKSPACE/objects/ddl_master_change_history.sql
           pip install schemachange
@@ -75,7 +75,6 @@ jobs:
         
       - name: Deploy to QUT
         env:
-          
           SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }} 
           SNOWSQL_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
