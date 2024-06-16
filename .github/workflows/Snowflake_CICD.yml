@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy_dev:
-
+    name: $JOB_NAME
     # if: github.ref == 'refs/heads/dev' 
     runs-on: ubuntu-latest
     environment: dev
@@ -75,4 +75,3 @@ jobs:
                 echo "Not the target project!"
               fi
           done
-    name: $JOB_NAME
