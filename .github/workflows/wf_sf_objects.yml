@@ -1,36 +1,17 @@
-name: Snowflake_CICD
+name: wf_sf_objects
 
 on:
-  # push:
-  #   branches:
-  #     - dev
-  #     - qut
-  #     - main
-  workflow_dispatch:   # Allow manual triggering of the workflow
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
 
 jobs:
-  deploy_dev:
-    name: $JOB_NAME
-    # if: github.ref == 'refs/heads/dev' 
+  deploy:
     runs-on: ubuntu-latest
-    environment: dev
-    steps:
-      - name: Set Job Name
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
-            echo "JOB_NAME=dev" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event.repository.name }}" != "RepoED" ]]; then
-            echo "JOB_NAME=qut" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == "refs/heads/qut" && "${{ github.event.repository.name }}" == "RepoED" ]]; then
-            echo "JOB_NAME=qut" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event.repository.name }}" == "RepoED" ]]; then
-            echo "JOB_NAME=prd" >> $GITHUB_ENV
-          else
-            echo "JOB_NAME=default" >> $GITHUB_ENV
-            echo "Job failed due to unexpected job conditions!"
-            exit 1
-          fi
-          
+    environment: ${{ inputs.environment }}
+    steps:          
       - name: Retrieve Repository
         uses: actions/checkout@v3
       - name: Use Python 3.8.x
