@@ -1,4 +1,4 @@
-name: Snowflake_CICD
+name: wf_call_sf_objects
 
 on:
   # push:
