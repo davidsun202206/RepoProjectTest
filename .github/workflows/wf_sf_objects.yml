@@ -1,0 +1,58 @@
+name: wf_sf_objects
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:          
+      - name: Retrieve Repository
+        uses: actions/checkout@v3
+      - name: Use Python 3.8.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8.x
+      - name: Install SnowSQL
+        run: |
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.0-linux_x86_64.bash
+          SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.3.0-linux_x86_64.bash
+      - name: Deploy to DEV
+        env:
+          SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }} 
+          SNOWSQL_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USERNAME }}
+          SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          TARGET_PROJECT: ${{ vars.TARGET_PROJECT }}
+        run: |
+          # ~/bin/snowsql -f $GITHUB_WORKSPACE/objects/ddl_master_change_history.sql
+          ddl_master_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_master_change_history.sql" | sed "s/{TARGET_PROJECT}/$TARGET_PROJECT/g")
+          echo "$ddl_master_change_history_query"
+          ~/bin/snowsql -q "$ddl_master_change_history_query"        
+          pip install schemachange==3.6.1
+          for dir in "$GITHUB_WORKSPACE/objects"/*/; do
+              subdir=$(basename "$dir")
+              echo "Found project subdirectory: $subdir"
+              if [[ -z $TARGET_PROJECT ]]; then
+                ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+                echo "$ddl_project_change_history_query"
+                ~/bin/snowsql -q "$ddl_project_change_history_query"
+  
+                schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
+                
+                dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
+                echo "$dml_change_history_query"
+                ~/bin/snowsql -q "$dml_change_history_query"
+              elif [[ $TARGET_PROJECT == $subdir ]]; then
+                schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY
+              else
+                echo "Not the target project!"
+              fi
+          done
