@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy_dev:
-    name: ${{ env.JOB_NAME }}
+    name: "abc"
     # if: github.ref == 'refs/heads/dev' 
     runs-on: ubuntu-latest
     environment: dev
