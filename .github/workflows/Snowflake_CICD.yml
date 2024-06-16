@@ -9,125 +9,36 @@ on:
   workflow_dispatch:   # Allow manual triggering of the workflow
 
 jobs:
-  deploy_dev:
-    if: github.ref == 'refs/heads/dev' 
+  deploy_${{ env.JOB_NAME }}::
+    # if: github.ref == 'refs/heads/dev' 
     runs-on: ubuntu-latest
     environment: dev
     steps:
-      - name: Retrieve repository
+      - name: Set Job Name
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo "::set-env name=JOB_NAME::dev"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event.repository.name }}" != "RepoED"]]; then
+            echo "::set-env name=JOB_NAME::qut"
+          elif [[ "${{ github.ref }}" == "refs/heads/qut" && "${{ github.event.repository.name }}" == "RepoED"]]; then
+            echo "::set-env name=JOB_NAME::qut"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event.repository.name }}" == "RepoED"]]; then
+            echo "::set-env name=JOB_NAME::prd"
+          else
+            echo "Job failed due to unexpected job conditions!"
+            exit 1
+          fi
+      - name: Retrieve Repository
         uses: actions/checkout@v3
-      
       - name: Use Python 3.10.x
         uses: actions/setup-python@v4
         with:
           python-version: 3.10.x
-
       - name: Install SnowSQL
         run: |
           curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.0-linux_x86_64.bash
           SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.3.0-linux_x86_64.bash
-
       - name: Deploy to DEV
-        env:
-          SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }} 
-          SNOWSQL_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
-          SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USERNAME }}
-          SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-          SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
-          TARGET_PROJECT: ${{ vars.TARGET_PROJECT }}
-        run: |
-          ~/bin/snowsql -f $GITHUB_WORKSPACE/objects/ddl_master_change_history.sql
-          pip install schemachange
-          for dir in "$GITHUB_WORKSPACE/objects"/*/; do
-              subdir=$(basename "$dir")
-              echo "Found project subdirectory: $subdir"
-              if [[ -z $TARGET_PROJECT ]]; then
-                ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
-                echo "$ddl_project_change_history_query"
-                ~/bin/snowsql -q "$ddl_project_change_history_query"
-  
-                schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
-                
-                dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
-                echo "$dml_change_history_query"
-                ~/bin/snowsql -q "$dml_change_history_query"
-              elif [[ $TARGET_PROJECT == $subdir ]]; then
-                schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY
-              else
-                echo "Not target project!"
-              fi
-          done
-
-  deploy_qut:
-    if: (github.ref == 'refs/heads/main' && github.event.repository.name != 'RepoED') || (github.ref == 'refs/heads/qut' && github.event.repository.name == 'RepoED')
-    runs-on: ubuntu-latest
-    environment: qut
-    steps:
-      - name: Retrieve repository
-        uses: actions/checkout@v3
-      
-      - name: Use Python 3.10.x
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.10.x
-
-      - name: Install SnowSQL
-        run: |
-          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.0-linux_x86_64.bash
-          SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.3.0-linux_x86_64.bash
-        
-      - name: Deploy to QUT
-        env:
-          SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }} 
-          SNOWSQL_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
-          SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USERNAME }}
-          SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-          SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
-          TARGET_PROJECT: ${{ vars.TARGET_PROJECT }}
-        run: |
-          ~/bin/snowsql -f $GITHUB_WORKSPACE/objects/ddl_master_change_history.sql
-          pip install schemachange
-          for dir in "$GITHUB_WORKSPACE/objects"/*/; do
-              subdir=$(basename "$dir")
-              echo "Found project subdirectory: $subdir"
-              if [[ -z $TARGET_PROJECT ]]; then
-                ddl_project_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_project_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
-                echo "$ddl_project_change_history_query"
-                ~/bin/snowsql -q "$ddl_project_change_history_query"
-  
-                schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY_$subdir 
-                
-                dml_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/dml_change_history.sql" | sed "s/{PROJECT}/$subdir/g")
-                echo "$dml_change_history_query"
-                ~/bin/snowsql -q "$dml_change_history_query"
-              elif [[ $TARGET_PROJECT == $subdir ]]; then
-                schemachange -f $GITHUB_WORKSPACE/objects/$subdir -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -d $SNOWSQL_DATABASE -c $SNOWSQL_DATABASE.SCHEMACHANGE.CHANGE_HISTORY
-              else
-                echo "Not target project!"
-              fi
-          done
-
-  deploy_prd:
-    if: github.ref == 'refs/heads/main' && github.event.repository.name == 'RepoED'
-    runs-on: ubuntu-latest
-    environment: prd
-    steps:
-      - name: Retrieve repository
-        uses: actions/checkout@v3
-      
-      - name: Use Python 3.10.x
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.10.x
-
-      - name: Install SnowSQL
-        run: |
-          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.0-linux_x86_64.bash
-          SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.3.0-linux_x86_64.bash
-        
-      - name: Deploy to PRD
         env:
           SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }} 
