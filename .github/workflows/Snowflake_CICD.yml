@@ -75,4 +75,4 @@ jobs:
                 echo "Not the target project!"
               fi
           done
-    name: ${{ env.JOB_NAME }}
+    name: $JOB_NAME
