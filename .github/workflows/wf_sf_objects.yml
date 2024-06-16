@@ -30,7 +30,7 @@ jobs:
           SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USERNAME }}
           SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
           SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
-          TARGET_PROJECT: ${{ vars.TARGET_PROJECT222 }}
+          TARGET_PROJECT: ${{ vars.TARGET_PROJECT }}
         run: |
           # create master change history table if not exists
           ddl_master_change_history_query=$(cat "$GITHUB_WORKSPACE/objects/ddl_master_change_history.sql" | sed "s/{TARGET_PROJECT}/$TARGET_PROJECT/g")
