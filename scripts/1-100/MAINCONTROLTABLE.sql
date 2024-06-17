@@ -2,6 +2,7 @@
 DECLARE
     UPDATECOUNT INT;
     INSERTCOUNT INT;
+    abc varchar;
 BEGIN
     -- ED PRD environment
     IF (CURRENT_DATABASE() = 'DB_ED_PRD') THEN
