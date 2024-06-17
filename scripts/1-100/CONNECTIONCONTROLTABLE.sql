@@ -1,5 +1,4 @@
 -- USE DATABASE SANDBOX; -- Remove this line in real CICD 
--- For test purpose
 DECLARE
     UPDATECOUNT INT;
     INSERTCOUNT INT;
